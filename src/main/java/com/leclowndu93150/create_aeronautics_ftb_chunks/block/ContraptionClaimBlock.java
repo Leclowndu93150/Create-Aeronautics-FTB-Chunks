@@ -177,7 +177,7 @@ public class ContraptionClaimBlock extends BaseEntityBlock {
             canPlotForceLoad = ModConfig.ALLOW_PLOT_CHUNK_FORCE_LOAD.get()
                     && claimed
                     && td.canDoOfflineForceLoading()
-                    && usedForceLoads < maxForceLoads;
+                    && (forceLoaded || usedForceLoads < maxForceLoads);
         }
 
         ServerHandler.setPendingChunks(serverPlayer.getUUID(), chunkLongs);
@@ -192,7 +192,7 @@ public class ContraptionClaimBlock extends BaseEntityBlock {
                 ContraptionForceLoadManager.isPhysicsForceLoaded(subLevelUUID),
                 ModConfig.ALLOW_PLOT_CHUNK_FORCE_LOAD.get(),
                 canPlotForceLoad,
-                ModConfig.ALLOW_PHYSICS_FORCE_LOAD.get() && canPlotForceLoad,
+                false,
                 usedClaims, maxClaims, usedForceLoads, maxForceLoads,
                 isPartyTeam, accessMode, ownerUUID, ownerName, memberNames, allyNames, chunkLongs
         ));

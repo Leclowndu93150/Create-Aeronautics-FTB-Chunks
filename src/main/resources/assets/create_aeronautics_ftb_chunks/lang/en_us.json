@@ -26,5 +26,13 @@
   "create_aeronautics_ftb_chunks.screen.plot_force": "Keep Anchor Loaded",
   "create_aeronautics_ftb_chunks.screen.plot_unforce": "Release Anchor Load",
   "create_aeronautics_ftb_chunks.screen.physics_force": "Keep Physics Active",
-  "create_aeronautics_ftb_chunks.screen.physics_unforce": "Stop Physics Force"
+  "create_aeronautics_ftb_chunks.screen.physics_unforce": "Stop Physics Force",
+  "create_aeronautics_ftb_chunks.map.owner": "Owner: %s",
+  "create_aeronautics_ftb_chunks.map.plot_chunks": "Force-loaded plot chunks: %s/%s",
+  "create_aeronautics_ftb_chunks.map.physics": "Physics ticket: %s",
+  "create_aeronautics_ftb_chunks.map.physical_chunk": "Physical chunk: %s",
+  "create_aeronautics_ftb_chunks.map.altitude": "Altitude: %s blocks",
+  "create_aeronautics_ftb_chunks.map.speed": "Speed: %s blocks/s",
+  "create_aeronautics_ftb_chunks.map.active": "Active",
+  "create_aeronautics_ftb_chunks.map.inactive": "Inactive"
 }

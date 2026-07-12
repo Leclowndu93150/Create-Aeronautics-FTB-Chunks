@@ -5,8 +5,6 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "PartyTeamAccessor",
-    "ServerSubLevelAccessor",
-    "MixinBlockBreakingKineticBlockEntity",
     "MixinBlockEntityConfigurationPacket",
     "MixinClipboardEditPacket",
     "MixinRadialWrenchMenuSubmitPacket",

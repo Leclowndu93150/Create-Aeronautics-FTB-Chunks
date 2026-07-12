@@ -78,8 +78,8 @@ public class ContraptionClaimScreen extends AbstractThreePanelScreen<Contraption
 
         data = switch (action) {
             case CLAIM                -> data.withClaimed(true);
-            case UNCLAIM              -> data.withClaimed(false).withForceLoaded(false, 0).withPlotForceLoaded(false).withPhysicsForceLoaded(false);
-            case FORCE_LOAD           -> data.withForceLoaded(true, data.chunkCount());
+            case UNCLAIM              -> data.withClaimed(false);
+            case FORCE_LOAD           -> data.withForceLoaded(true, data.chunkCount()).withPlotForceLoaded(true).withPhysicsForceLoaded(true);
             case UNFORCE_LOAD         -> data.withForceLoaded(false, -data.chunkCount()).withPlotForceLoaded(false).withPhysicsForceLoaded(false);
             case PHYSICS_FORCE_LOAD   -> data.withPhysicsForceLoaded(true);
             case PHYSICS_UNFORCE_LOAD -> data.withPhysicsForceLoaded(false);
@@ -187,16 +187,6 @@ public class ContraptionClaimScreen extends AbstractThreePanelScreen<Contraption
                         mb -> sendAction(data.forceLoaded() ? Action.UNFORCE_LOAD : Action.FORCE_LOAD)));
 
                 add(new VerticalSpaceWidget(this, 2));
-
-                if (data.canPlotForceLoad()) {
-                    add(SimpleTextButton.create(this,
-                            data.plotForceLoaded()
-                                    ? Component.translatable("create_aeronautics_ftb_chunks.screen.plot_unforce")
-                                    : Component.translatable("create_aeronautics_ftb_chunks.screen.plot_force"),
-                            Icons.LOCK,
-                            mb -> sendAction(data.plotForceLoaded() ? Action.UNFORCE_LOAD : Action.FORCE_LOAD)));
-                    add(new VerticalSpaceWidget(this, 2));
-                }
 
                 if (data.canPhysicsForceLoad()) {
                     add(SimpleTextButton.create(this,

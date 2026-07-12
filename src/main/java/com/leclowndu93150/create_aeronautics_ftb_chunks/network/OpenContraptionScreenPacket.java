@@ -87,11 +87,18 @@ public record OpenContraptionScreenPacket(
     );
 
     public OpenContraptionScreenPacket withClaimed(boolean claimed) {
-        return new OpenContraptionScreenPacket(subLevelUUID, shipName, chunkCount, claimed, forceLoaded, plotForceLoaded, physicsForceLoaded, canForceLoad, canPlotForceLoad, canPhysicsForceLoad, usedClaims, maxClaims, usedForceLoads, maxForceLoads, isPartyTeam, accessMode, ownerUUID, ownerName, memberNames, allyNames, chunkLongs);
+        int claimsDelta = claimed == this.claimed ? 0 : claimed ? chunkCount : -chunkCount;
+        int updatedClaims = Math.clamp(usedClaims + claimsDelta, 0, maxClaims);
+        boolean updatedForceLoaded = claimed && forceLoaded;
+        int forceLoadsDelta = !claimed && forceLoaded ? -chunkCount : 0;
+        int updatedForceLoads = Math.clamp(usedForceLoads + forceLoadsDelta, 0, maxForceLoads);
+        return new OpenContraptionScreenPacket(subLevelUUID, shipName, chunkCount, claimed, updatedForceLoaded, claimed && plotForceLoaded, claimed && physicsForceLoaded, canForceLoad, canPlotForceLoad, canPhysicsForceLoad, updatedClaims, maxClaims, updatedForceLoads, maxForceLoads, isPartyTeam, accessMode, ownerUUID, ownerName, memberNames, allyNames, chunkLongs);
     }
 
     public OpenContraptionScreenPacket withForceLoaded(boolean forceLoaded, int usedForceLoadsDelta) {
-        return new OpenContraptionScreenPacket(subLevelUUID, shipName, chunkCount, claimed, forceLoaded, plotForceLoaded, physicsForceLoaded, canForceLoad, canPlotForceLoad, canPhysicsForceLoad, usedClaims, maxClaims, Math.max(0, usedForceLoads + usedForceLoadsDelta), maxForceLoads, isPartyTeam, accessMode, ownerUUID, ownerName, memberNames, allyNames, chunkLongs);
+        int transitionDelta = forceLoaded == this.forceLoaded ? 0 : forceLoaded ? chunkCount : -chunkCount;
+        int updatedForceLoads = Math.clamp(usedForceLoads + transitionDelta, 0, maxForceLoads);
+        return new OpenContraptionScreenPacket(subLevelUUID, shipName, chunkCount, claimed, forceLoaded, forceLoaded && plotForceLoaded, forceLoaded && physicsForceLoaded, canForceLoad, canPlotForceLoad, canPhysicsForceLoad, usedClaims, maxClaims, updatedForceLoads, maxForceLoads, isPartyTeam, accessMode, ownerUUID, ownerName, memberNames, allyNames, chunkLongs);
     }
 
     public OpenContraptionScreenPacket withPlotForceLoaded(boolean plotForceLoaded) {

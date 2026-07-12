@@ -7,6 +7,7 @@ import com.leclowndu93150.create_aeronautics_ftb_chunks.event.SubLevelClaimHandl
 import com.leclowndu93150.create_aeronautics_ftb_chunks.network.ContraptionAllyPacket;
 import com.leclowndu93150.create_aeronautics_ftb_chunks.network.ContraptionClaimActionPacket;
 import com.leclowndu93150.create_aeronautics_ftb_chunks.network.OpenContraptionScreenPacket;
+import com.leclowndu93150.create_aeronautics_ftb_chunks.network.ShipMapDataPacket;
 import com.leclowndu93150.create_aeronautics_ftb_chunks.network.ServerHandler;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import net.minecraft.core.registries.Registries;
@@ -24,21 +25,28 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.ModContainer;
 import net.neoforged.fml.common.Mod;
 import net.neoforged.fml.config.ModConfig;
+import net.neoforged.fml.loading.FMLEnvironment;
+import net.neoforged.api.distmarker.Dist;
 import net.minecraft.tags.BlockTags;
 import net.neoforged.neoforge.common.NeoForge;
 import net.neoforged.neoforge.event.server.ServerStartingEvent;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import net.neoforged.neoforge.event.BuildCreativeModeTabContentsEvent;
+import net.neoforged.neoforge.event.tick.ServerTickEvent;
 import net.neoforged.neoforge.network.event.RegisterPayloadHandlersEvent;
 import net.neoforged.neoforge.network.registration.PayloadRegistrar;
 import net.neoforged.neoforge.registries.DeferredBlock;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredItem;
 import net.neoforged.neoforge.registries.DeferredRegister;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @Mod(CreateAeronauticsFTBChunks.MODID)
 public class CreateAeronauticsFTBChunks {
 
     public static final String MODID = "create_aeronautics_ftb_chunks";
+    public static final Logger LOGGER = LoggerFactory.getLogger(MODID);
 
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
@@ -74,6 +82,7 @@ public class CreateAeronauticsFTBChunks {
             );
 
     public CreateAeronauticsFTBChunks(IEventBus modEventBus, ModContainer modContainer) {
+        ContraptionForceLoadManager.initialize();
         BLOCKS.register(modEventBus);
         ITEMS.register(modEventBus);
         BLOCK_ENTITIES.register(modEventBus);
@@ -81,14 +90,22 @@ public class CreateAeronauticsFTBChunks {
         modEventBus.addListener(this::registerPayloads);
         modContainer.registerConfig(ModConfig.Type.SERVER, com.leclowndu93150.create_aeronautics_ftb_chunks.ModConfig.SPEC);
         NeoForge.EVENT_BUS.register(this);
+        if (FMLEnvironment.dist == Dist.CLIENT) {
+            ClientHandler.initialize();
+        }
     }
 
     private void registerPayloads(RegisterPayloadHandlersEvent event) {
-        PayloadRegistrar registrar = event.registrar("1");
+        PayloadRegistrar registrar = event.registrar("2");
         registrar.playToClient(
                 OpenContraptionScreenPacket.TYPE,
                 OpenContraptionScreenPacket.STREAM_CODEC,
                 ClientHandler::handleOpenContraptionScreen
+        );
+        registrar.playToClient(
+                ShipMapDataPacket.TYPE,
+                ShipMapDataPacket.STREAM_CODEC,
+                ClientHandler::handleShipMapData
         );
         registrar.playToServer(
                 ContraptionClaimActionPacket.TYPE,
@@ -109,5 +126,17 @@ public class CreateAeronauticsFTBChunks {
         if (container != null) {
             container.addObserver(new SubLevelClaimHandler(event.getServer()));
         }
+    }
+
+    @SubscribeEvent
+    public void onServerTick(ServerTickEvent.Post event) {
+        ContraptionForceLoadManager.refreshExistingClaimBlocks(event.getServer());
+        ShipMapSyncManager.tick(event.getServer());
+    }
+
+    @SubscribeEvent
+    public void onServerStopped(ServerStoppedEvent event) {
+        ContraptionForceLoadManager.cleanupAll();
+        ShipMapSyncManager.reset();
     }
 }

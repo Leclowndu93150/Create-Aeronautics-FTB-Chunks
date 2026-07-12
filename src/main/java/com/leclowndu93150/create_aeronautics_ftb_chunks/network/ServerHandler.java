@@ -112,6 +112,10 @@ public class ServerHandler {
                 ContraptionForceLoadManager.disablePhysicsForceLoad(player.server, subLevelUUID);
                 ContraptionForceLoadManager.disablePlotForceLoad(player.server, subLevelUUID);
             }
+            if (packet.action() == ContraptionClaimActionPacket.Action.UNCLAIM && subLevelUUID != null) {
+                ContraptionForceLoadManager.disablePhysicsForceLoad(player.server, subLevelUUID);
+                ContraptionForceLoadManager.disablePlotForceLoad(player.server, subLevelUUID);
+            }
         });
     }
 
