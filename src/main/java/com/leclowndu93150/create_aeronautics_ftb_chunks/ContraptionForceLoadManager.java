@@ -388,7 +388,7 @@ public final class ContraptionForceLoadManager {
     private static boolean hasSableTicket(ServerSubLevelContainer container, UUID subLevelUUID) {
         var info = container.getAllTickets().get(subLevelUUID);
         return info != null && info.tickets().stream().anyMatch(ticket ->
-                ticket.getType().equals(SABLE_FORCE_LOAD_TICKET) && Unit.INSTANCE.equals(ticket.getKey()));
+                ticket.type().equals(SABLE_FORCE_LOAD_TICKET) && Unit.INSTANCE.equals(ticket.key()));
     }
 
     private static ServerSubLevel getSubLevel(ServerLevel level, UUID subLevelUUID) {
