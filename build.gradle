@@ -162,7 +162,7 @@ dependencies {
     implementation "curse.maven:ftb-library-forge-404465:8226923"
 
     runtimeOnly "curse.maven:create-328085:7963363"
-    runtimeOnly "curse.maven:sable-1312371:8263584"
+    runtimeOnly "curse.maven:sable-1312371:8673825"
     runtimeOnly "maven.modrinth:create-aeronautics:1.3.0+mc1.21.1"
     runtimeOnly "curse.maven:jei-238222:8417046"
 }
