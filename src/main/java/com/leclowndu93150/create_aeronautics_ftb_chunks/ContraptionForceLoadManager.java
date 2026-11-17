@@ -36,10 +36,6 @@ public final class ContraptionForceLoadManager {
     private static final long CLAIM_BLOCK_REFRESH_INTERVAL = 100L;
     private static final int PHYSICAL_TICKET_RADIUS = 3;
 
-    /*
-     * Keep the original ID used by the development build so existing test worlds retain their tickets.
-     * Sable serializes this type ID and uses it to restore the sub-level before players join.
-     */
     private static final SubLevelLoadingTicketType<Unit> SABLE_FORCE_LOAD_TICKET = SubLevelLoadingTicketType.create(
             ResourceLocation.fromNamespaceAndPath(CreateAeronauticsFTBChunks.MODID, "plot_force_loaded"),
             Unit.CODEC
@@ -53,9 +49,6 @@ public final class ContraptionForceLoadManager {
     private ContraptionForceLoadManager() {
     }
 
-    /**
-     * Forces class initialization during mod construction. Ticket types must be registered before Sable reads saved data.
-     */
     public static void initialize() {
     }
 
@@ -172,13 +165,9 @@ public final class ContraptionForceLoadManager {
             return false;
         }
 
-        addChainTickets(level, serverContainer, subLevel);
-        if (!hasSableTicket(serverContainer, subLevelUUID)) {
-            return false;
-        }
-
+        addChainTickets(serverContainer, subLevel);
         physicsForceLoaded.put(subLevelUUID, ownerUUID);
-        updatePhysicalTickets(level, true);
+        updatePhysicalTickets(level);
         CreateAeronauticsFTBChunks.LOGGER.info("[physics-forceload] enabled Sable and physical tickets for sub={}", subLevelUUID);
         return true;
     }
@@ -196,9 +185,6 @@ public final class ContraptionForceLoadManager {
         CreateAeronauticsFTBChunks.LOGGER.info("[physics-forceload] removed Sable and physical tickets for sub={}", subLevelUUID);
     }
 
-    /**
-     * Rebuilds the in-memory UI state after a server restart. Sable owns persistence and loading of physics tickets.
-     */
     public static void refreshExistingClaimBlocks(MinecraftServer server) {
         ServerLevel level = server.overworld();
         long gameTime = level.getGameTime();
@@ -219,14 +205,11 @@ public final class ContraptionForceLoadManager {
 
             UUID subLevelUUID = subLevel.getUniqueId();
             UUID ownerUUID = findClaimBlockOwner(subLevel);
-            boolean hasTicket = hasSableTicket(serverContainer, subLevelUUID);
 
             if (ownerUUID == null) {
                 plotForceLoaded.remove(subLevelUUID);
                 physicsForceLoaded.remove(subLevelUUID);
-                if (hasTicket) {
-                    serverContainer.removeForceLoadTicket(subLevel, SABLE_FORCE_LOAD_TICKET, Unit.INSTANCE);
-                }
+                serverContainer.removeForceLoadTicket(subLevel, SABLE_FORCE_LOAD_TICKET, Unit.INSTANCE);
                 removePhysicalTicket(level, subLevelUUID);
                 continue;
             }
@@ -237,41 +220,27 @@ public final class ContraptionForceLoadManager {
 
             if (plotLoaded) {
                 plotForceLoaded.put(subLevelUUID, ownerUUID);
-                if (!hasTicket) {
-                    addChainTickets(level, serverContainer, subLevel);
-                    hasTicket = hasSableTicket(serverContainer, subLevelUUID);
-                    if (hasTicket) {
-                        CreateAeronauticsFTBChunks.LOGGER.info(
-                                "[physics-forceload] restored Sable ticket for force-loaded sub={}",
-                                subLevelUUID
-                        );
-                    }
+                if (addChainTickets(serverContainer, subLevel)) {
+                    CreateAeronauticsFTBChunks.LOGGER.info(
+                            "[physics-forceload] restored Sable ticket for force-loaded sub={}",
+                            subLevelUUID
+                    );
                 }
-
-                if (hasTicket) {
-                    physicsForceLoaded.put(subLevelUUID, ownerUUID);
-                } else {
-                    physicsForceLoaded.remove(subLevelUUID);
-                }
+                physicsForceLoaded.put(subLevelUUID, ownerUUID);
             } else {
                 plotForceLoaded.remove(subLevelUUID);
                 physicsForceLoaded.remove(subLevelUUID);
-                if (hasTicket) {
+                if (serverContainer.removeForceLoadTicket(subLevel, SABLE_FORCE_LOAD_TICKET, Unit.INSTANCE)) {
                     removeChainTickets(level, serverContainer, subLevel);
                 }
                 removePhysicalTicket(level, subLevelUUID);
             }
         }
 
-        updatePhysicalTickets(level, gameTime % CLAIM_BLOCK_REFRESH_INTERVAL == 0L);
+        updatePhysicalTickets(level);
     }
 
-    /**
-     * Aero Reformation's physics anchor keeps a vanilla region ticket under the moving ship in addition
-     * to Sable's sub-level ticket. This ensures the physical world remains entity-ticking even if Sable's
-     * own inhabited-chunk ticket has not been established yet (notably directly after a join/load).
-     */
-    private static void updatePhysicalTickets(ServerLevel level, boolean renew) {
+    private static void updatePhysicalTickets(ServerLevel level) {
         SubLevelContainer container = SubLevelContainer.getContainer(level);
         if (!(container instanceof ServerSubLevelContainer serverContainer)) {
             return;
@@ -298,18 +267,16 @@ public final class ContraptionForceLoadManager {
                         (int) Math.floor(position.z() / 16.0)
                 );
                 PhysicalTicket previous = physicalTickets.get(id);
-                if (previous == null || !previous.chunk().equals(currentChunk) || renew) {
-                    if (previous != null) {
-                        level.getChunkSource().removeRegionTicket(
-                                TicketType.PORTAL, previous.chunk(), PHYSICAL_TICKET_RADIUS, previous.key()
-                        );
-                    }
-                    BlockPos key = previous == null ? ticketKey(id) : previous.key();
-                    level.getChunkSource().addRegionTicket(
-                            TicketType.PORTAL, currentChunk, PHYSICAL_TICKET_RADIUS, key
+                if (previous != null && !previous.chunk().equals(currentChunk)) {
+                    level.getChunkSource().removeRegionTicket(
+                            TicketType.PORTAL, previous.chunk(), PHYSICAL_TICKET_RADIUS, previous.key()
                     );
-                    physicalTickets.put(id, new PhysicalTicket(currentChunk, key));
                 }
+                BlockPos key = previous == null ? ticketKey(id) : previous.key();
+                level.getChunkSource().addRegionTicket(
+                        TicketType.PORTAL, currentChunk, PHYSICAL_TICKET_RADIUS, key
+                );
+                physicalTickets.put(id, new PhysicalTicket(currentChunk, key));
             }
         }
 
@@ -320,12 +287,17 @@ public final class ContraptionForceLoadManager {
         }
     }
 
-    private static void addChainTickets(ServerLevel level, ServerSubLevelContainer container, ServerSubLevel root) {
+    private static boolean addChainTickets(ServerSubLevelContainer container, ServerSubLevel root) {
+        boolean rootAdded = false;
         for (var connected : SubLevelHelper.getConnectedChain(root)) {
             if (connected instanceof ServerSubLevel subLevel && !subLevel.isRemoved()) {
-                container.addForceLoadTicket(subLevel, SABLE_FORCE_LOAD_TICKET, Unit.INSTANCE);
+                boolean added = container.addForceLoadTicket(subLevel, SABLE_FORCE_LOAD_TICKET, Unit.INSTANCE);
+                if (subLevel == root) {
+                    rootAdded = added;
+                }
             }
         }
+        return rootAdded;
     }
 
     private static void removeChainTickets(ServerLevel level, ServerSubLevelContainer container, ServerSubLevel root) {
@@ -383,12 +355,6 @@ public final class ContraptionForceLoadManager {
             }
         }
         return true;
-    }
-
-    private static boolean hasSableTicket(ServerSubLevelContainer container, UUID subLevelUUID) {
-        var info = container.getAllTickets().get(subLevelUUID);
-        return info != null && info.tickets().stream().anyMatch(ticket ->
-                ticket.type().equals(SABLE_FORCE_LOAD_TICKET) && Unit.INSTANCE.equals(ticket.key()));
     }
 
     private static ServerSubLevel getSubLevel(ServerLevel level, UUID subLevelUUID) {

@@ -8,6 +8,7 @@
     "MixinBlockEntityConfigurationPacket",
     "MixinClipboardEditPacket",
     "MixinRadialWrenchMenuSubmitPacket",
+    "MixinServerChunkCache",
     "MixinSuperGlueRemovalPacket",
     "MixinSuperGlueSelectionPacket",
     "MixinToolboxDisposeAllPacket",

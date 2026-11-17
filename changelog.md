@@ -1,0 +1,4 @@
+- Fixed a server crash, and a possible hang on shutdown, after removing force load from a ship
+- Works with Sable 2.0.5 and newer instead of only 2.0.5
+- The terrain under a force loaded ship now stays loaded instead of dropping after 15 seconds
+- Updated to Create Aeronautics 1.3.2, FTB Chunks 2101.1.24 and NeoForge 21.1.266
